@@ -1,36 +1,35 @@
 package models
 
 import (
-	""
 	"errors"
 	"github.com/badoux/checkmail"
+	"github.com/jinzhu/gorm"
+	"golang.org/x/crypto/bcrypt"
 	"html"
 	"log"
 	"strings"
 	"time"
-	"github.com/jinzhu/gorm"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-	ID 			uint32 		`gorm:"primary_key;auto_increment" json:"id"`
-	Nickname 	string 		`gorm:"size:255;not null;unique" json:"nickname"`
-	Email 		string  	`gorm:"size:100;not null;unique" json:"email"`
-	Password	string		`gorm:"size:100;not null;" json:"password"`
-	CreatedAt	time.Time	`gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
-	UpdatedAt	time.Time	`gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
+	ID        uint32    `gorm:"primary_key;auto_increment" json:"id"`
+	Nickname  string    `gorm:"size:255;not null;unique" json:"nickname"`
+	Email     string    `gorm:"size:100;not null;unique" json:"email"`
+	Password  string    `gorm:"size:100;not null;" json:"password"`
+	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
+	UpdatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
-func Hash(password string) ([]byte,error)  {
+func Hash(password string) ([]byte, error) {
 
-	return bcrypt.GenerateFromPassword([]byte(password),bcrypt.DefaultCost)
+	return bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 }
 
-func VerifyPassword(hashedPassword,password string) error {
-	return bcrypt.CompareHashAndPassword([]byte(hashedPassword),[]byte(password))
+func VerifyPassword(hashedPassword, password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
-func (u *User) BeforeSave() error  {
-	hashedPassword,err := Hash(u.Password)
+func (u *User) BeforeSave() error {
+	hashedPassword, err := Hash(u.Password)
 	if err != nil {
 		return err
 	}
@@ -38,18 +37,18 @@ func (u *User) BeforeSave() error  {
 	return nil
 }
 
-func (u *User) Prepare()  {
+func (u *User) Prepare() {
 	u.ID = 0
 	u.Nickname = html.EscapeString(strings.TrimSpace(u.Nickname))
 	u.Email = html.EscapeString(strings.TrimSpace(u.Email))
 	u.CreatedAt = time.Now()
 	u.UpdatedAt = time.Now()
-	
+
 }
-func (u *User) Validate(action string)  error {
+func (u *User) Validate(action string) error {
 	switch strings.ToLower(action) {
 	case "update":
-		if u.Nickname == ""{
+		if u.Nickname == "" {
 			return errors.New("Required Nickname")
 		}
 		if u.Password == "" {
@@ -58,7 +57,7 @@ func (u *User) Validate(action string)  error {
 		if u.Email == "" {
 			return errors.New("Required Email")
 		}
-		if err:=checkmail.ValidateFormat(u.Email); err != nil {
+		if err := checkmail.ValidateFormat(u.Email); err != nil {
 			return errors.New("Invalid Email")
 		}
 
@@ -158,6 +157,3 @@ func (u *User) DeleteAUser(db *gorm.DB, uid uint32) (int64, error) {
 	}
 	return db.RowsAffected, nil
 }
-
-
-	
